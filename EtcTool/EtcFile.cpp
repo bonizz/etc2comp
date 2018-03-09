@@ -387,4 +387,8 @@ void File::Write()
 
 // ----------------------------------------------------------------------------------------------------
 //
-
+void File::AddKeyAndValue(const void* key, size_t keySize, const void* value, size_t valueSize)
+{
+	if (m_fileformat == Format::KTX)
+		((FileHeader_Ktx*)m_pheader)->AddKeyAndValue(key, keySize, value, valueSize);
+}

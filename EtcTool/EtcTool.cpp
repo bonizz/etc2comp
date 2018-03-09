@@ -46,6 +46,10 @@ that can be created.
 #include <stdlib.h>
 #include <string.h>
 
+#include <map>
+#include <string>
+#include <vector>
+
 using namespace Etc;
 
 #if ETC_WINDOWS
@@ -116,6 +120,8 @@ public:
 	bool boolNormalizeXYZ;
 	int mipmaps;
 	unsigned int mipFilterFlags;
+	
+	std::map<std::string, std::string> keyValuePairs;
 };
 
 #include "EtcFileHeader.h"
@@ -205,6 +211,10 @@ int main(int argc, const char * argv[])
 			commands.mipmaps,
 			pMipmapImages,
 			uiSourceWidth, uiSourceHeight );
+		
+		for (const auto& pair : commands.keyValuePairs)
+			etcfile.AddKeyAndValue(pair.first.data(), pair.first.length() + 1, pair.second.data(), pair.second.length() + 1);
+		
 		etcfile.Write();
 
 		delete [] pMipmapImages;
@@ -244,6 +254,10 @@ int main(int argc, const char * argv[])
 							paucEncodingBits, uiEncodingBitsBytes,
 							uiSourceWidth, uiSourceHeight,
 							uiExtendedWidth, uiExtendedHeight);
+
+		for (const auto& pair : commands.keyValuePairs)
+			etcfile.AddKeyAndValue(pair.first.data(), pair.first.length() + 1, pair.second.data(), pair.second.length() + 1);
+
 		etcfile.Write();
 	}
 	else
@@ -273,6 +287,9 @@ int main(int argc, const char * argv[])
 							image.GetEncodingBits(), image.GetEncodingBitsBytes(),
 							image.GetSourceWidth(), image.GetSourceHeight(),
 							image.GetExtendedWidth(), image.GetExtendedHeight());
+
+		for (const auto& pair : commands.keyValuePairs)
+			etcfile.AddKeyAndValue(pair.first.data(), pair.first.length() + 1, pair.second.data(), pair.second.length() + 1);
 
 		etcfile.Write();
 
@@ -623,6 +640,40 @@ bool Commands::ProcessCommandLineArguments(int a_iArgs, const char *a_apstrArgs[
 				}
 			}
 		}
+		else if (strcmp(a_apstrArgs[iArg], "-keyvalue") == 0)
+		{
+			++iArg;
+			
+			if (iArg >= a_iArgs)
+			{
+				printf("Error: missing key value for -keyvalue\n");
+				return true;
+			}
+			else
+			{
+				size_t argLen = strlen(a_apstrArgs[iArg]);
+				
+				if (argLen < 2 || a_apstrArgs[iArg][0] != '"' || a_apstrArgs[iArg][argLen-1] != '"')
+				{
+					printf("Error: -keyvalue arg must be surrounded with \"\"\n");
+					return true;
+				}
+				
+				std::vector<char> tmpArg(argLen+1);
+				strncpy(tmpArg.data(), a_apstrArgs[iArg], argLen);
+
+				tmpArg[argLen-1] = '\0';
+				
+				const char* key = tmpArg.data() + 1;
+				
+				char* eql = strchr(tmpArg.data(), '=');
+				*eql = '\0';
+				
+				const char* val = eql + 1;
+				
+				keyValuePairs[std::string(key)] = std::string(val);
+			}
+		}
 		else if (strcmp(a_apstrArgs[iArg], "-normalizexyz") == 0 ||
 				 strcmp(a_apstrArgs[iArg], "-normalizeXYZ") == 0)
 		{
@@ -799,6 +850,7 @@ void Commands::PrintUsageMessage(void)
 	printf("                                  SRGB8A1 or R11\n");
 	printf("    -help                         prints this message\n");
 	printf("    -jobs or -j <thread_count>    specifies the number of threads (default=1)\n");
+	printf("    -keyvalue \"Key=Value\"       specifies key value pair to add to ktx header\n");
 	printf("    -normalizexyz                 normalize RGB to have a length of 1\n");
 	printf("    -verbose or -v                shows status information during the encoding\n");
 	printf("                                  process\n");
