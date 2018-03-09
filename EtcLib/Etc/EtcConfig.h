@@ -51,7 +51,7 @@ typedef float	f32;
 typedef double	f64;
 
 // Keep asserts enabled in release builds during development
-#undef NDEBUG
+//#undef NDEBUG
 
 // 0=disable. stb_image can be used if you need to compress 
 //other image formats like jpg
